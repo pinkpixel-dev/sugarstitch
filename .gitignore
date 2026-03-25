@@ -1,0 +1,6 @@
+/dist
+/node_modules
+/pdfs/
+/images/
+pattern-data.json
+sugarstitch.profiles.json

@@ -1,0 +1,26 @@
+{
+  "name": "@pinkpixel/sugarstitch",
+  "version": "1.0.0",
+  "description": "A CLI tool to scrape sewing patterns",
+  "main": "dist/index.js",
+  "bin": {
+    "sugarstitch": "dist/index.js"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc && node scripts/add-shebang.js",
+    "start": "ts-node src/index.ts",
+    "scrape": "ts-node src/index.ts",
+    "ui": "ts-node src/server.ts"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "cheerio": "^1.0.0-rc.12",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.3"
+  }
+}
