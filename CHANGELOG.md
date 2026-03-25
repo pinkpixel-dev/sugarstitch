@@ -9,6 +9,7 @@ The format is based on Keep a Changelog, and this project currently tracks relea
 ### Added
 
 - Initial public CLI for scraping sewing pattern pages into local JSON, image, and PDF files
+- Plain-text pattern artifacts saved under `texts/<pattern_title>/pattern.txt` for each scraped page
 - README improvements covering installation, usage, selector discovery, troubleshooting, and output structure
 - MIT license
 - A simple local web UI with a mode dropdown, URL inputs, output field, summary view, and run log

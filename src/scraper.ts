@@ -13,6 +13,7 @@ export interface PatternData {
   sourceUrl: string;
   localImages: string[];
   localPdfs: string[];
+  localTextFile: string;
 }
 
 export interface ScrapeRunOptions {
@@ -112,6 +113,8 @@ export interface PreviewResult {
   description: string;
   materials: string[];
   instructions: string[];
+  pageText: string;
+  sourceUrl: string;
   imageUrls: string[];
   pdfUrls: string[];
   preset: SelectorPresetId;
@@ -140,6 +143,7 @@ const DEFAULT_CRAWL_MAX_DEPTH = 2;
 const DEFAULT_CRAWL_MAX_URLS = 100;
 const DEFAULT_CRAWL_MAX_PAGINATION_PAGES = 20;
 export const DEFAULT_PROFILES_FILE = 'sugarstitch.profiles.json';
+const ARTICLE_TEXT_SELECTORS = ['.entry-content', '.wp-block-post-content', '.post-content', '.article-body', 'article', 'main'];
 
 const SELECTOR_PRESETS: Record<SelectorPresetId, SelectorPreset> = {
   generic: {
@@ -630,6 +634,52 @@ function collectAssetUrls($: cheerio.CheerioAPI, selectors: string[], pageUrl: s
   return [];
 }
 
+function normalizeTextBlock(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function extractPageText($: cheerio.CheerioAPI): string {
+  for (const selector of ARTICLE_TEXT_SELECTORS) {
+    const container = $(selector).first();
+    if (!container.length) continue;
+
+    const blocks: string[] = [];
+    container.find('h2, h3, h4, p, li').each((_, el) => {
+      const text = normalizeTextBlock($(el).text());
+      if (text) {
+        blocks.push(text);
+      }
+    });
+
+    const uniqueBlocks = dedupeStrings(blocks);
+    if (uniqueBlocks.length > 0) {
+      return uniqueBlocks.join('\n\n');
+    }
+  }
+
+  const fallbackText = normalizeTextBlock($('body').text());
+  return fallbackText;
+}
+
+async function writeTextArtifact(preview: PreviewResult, workingDirectory: string, safeTitle: string): Promise<string> {
+  const textDir = path.resolve(workingDirectory, 'texts', safeTitle);
+  await fs.mkdir(textDir, { recursive: true });
+  const textFile = path.resolve(textDir, 'pattern.txt');
+  const outputText = [
+    `Title: ${preview.title}`,
+    `Source URL: ${preview.sourceUrl}`,
+    `Preset: ${preview.presetLabel}`,
+    preview.profileLabel ? `Profile: ${preview.profileLabel}` : '',
+    preview.description ? `Description: ${preview.description}` : '',
+    preview.materials.length > 0 ? `Materials:\n- ${preview.materials.join('\n- ')}` : '',
+    preview.instructions.length > 0 ? `Instructions:\n- ${preview.instructions.join('\n- ')}` : '',
+    preview.pageText ? `Page Text:\n${preview.pageText}` : ''
+  ].filter(Boolean).join('\n\n');
+
+  await fs.writeFile(textFile, outputText, 'utf-8');
+  return `texts/${safeTitle}/pattern.txt`;
+}
+
 async function extractPatternPreview(
   url: string,
   logger: (message: string) => void,
@@ -655,6 +705,7 @@ async function extractPatternPreview(
   const description = firstTextMatch($, selectors.descriptionSelectors, 'No description found.');
   const materials = collectTextMatches($, selectors.materialsSelectors);
   const instructions = collectTextMatches($, selectors.instructionsSelectors);
+  const pageText = extractPageText($);
   const imageUrls = collectAssetUrls($, selectors.imageSelectors, url);
 
   const pdfUrls: string[] = [];
@@ -673,6 +724,8 @@ async function extractPatternPreview(
     description,
     materials,
     instructions,
+    pageText,
+    sourceUrl: url,
     imageUrls,
     pdfUrls: dedupeStrings(pdfUrls),
     preset: strategy.presetId,
@@ -696,6 +749,9 @@ async function scrapePattern(
     const safeTitle = sanitizeFilename(preview.title);
     const localImages: string[] = [];
     const localPdfs: string[] = [];
+    const localTextFile = await writeTextArtifact(preview, workingDirectory, safeTitle);
+
+    logger(`📝 Saved page text to ./${localTextFile}`);
 
     if (uniqueImageUrls.length > 0) {
       const imageDir = path.resolve(workingDirectory, 'images', safeTitle);
@@ -739,7 +795,8 @@ async function scrapePattern(
       instructions: preview.instructions,
       sourceUrl: url,
       localImages,
-      localPdfs
+      localPdfs,
+      localTextFile
     };
   } catch (error: any) {
     logger(`\n❌ Ah shit, something broke while fetching the URL: ${error.message}`);

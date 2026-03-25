@@ -95,6 +95,7 @@ That saves:
 - `patterns.json`
 - `images/`
 - `pdfs/`
+- `texts/`
 
 inside `./exports`.
 
@@ -328,9 +329,22 @@ SugarStitch writes one object per successfully scraped page:
   "instructions": ["Cut the pieces", "Sew the body", "Stuff and close"],
   "sourceUrl": "https://example.com/pattern",
   "localImages": ["images/pattern_title/image_1.jpg"],
-  "localPdfs": ["pdfs/pattern_title/pattern.pdf"]
+  "localPdfs": ["pdfs/pattern_title/pattern.pdf"],
+  "localTextFile": "texts/pattern_title/pattern.txt"
 }
 ```
+
+Each scraped page also gets a plain-text artifact at `texts/<pattern_title>/pattern.txt`.
+
+That text file includes:
+
+- title
+- source URL
+- selected preset and optional profile
+- extracted description
+- extracted materials list
+- extracted instructions list
+- a fuller page text block gathered from the article content
 
 ## Troubleshooting
 

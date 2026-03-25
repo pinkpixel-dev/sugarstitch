@@ -2,5 +2,7 @@
 /node_modules
 /pdfs/
 /images/
+/texts
 pattern-data.json
+pattern-data1.json
 sugarstitch.profiles.json
