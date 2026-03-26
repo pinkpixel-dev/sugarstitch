@@ -1,7 +1,9 @@
 /dist
 /node_modules
-/pdfs/
-/images/
+/pdfs
+/images
+/images1
+/texts1
 /texts
 pattern-data.json
 pattern-data1.json
